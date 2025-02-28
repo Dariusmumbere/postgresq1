@@ -193,7 +193,6 @@
       display: flex;
       justify-content: flex-end;
     }
-    
   </style>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -421,6 +420,62 @@
     function removeItem(index) {
       currentSale.splice(index, 1);
       updateSaleTable();
+    }
+
+    // Open Add Client Modal
+    function openAddClientModal() {
+      document.getElementById('addClientModal').classList.remove('hidden');
+    }
+
+    // Add Client
+    document.getElementById('addClientForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const clientName = document.querySelector('#addClientForm input[type="text"]').value;
+      const clientEmail = document.querySelector('#addClientForm input[type="text"]').value;
+      const clientPhone = document.querySelector('#addClientForm input[type="text"]').value;
+      clients.push({ name: clientName, email: clientEmail, phone: clientPhone });
+      closeModal('addClientModal');
+    });
+
+    // Open Choose Client Modal
+    function openChooseClientModal() {
+      const clientList = document.getElementById('clientList');
+      clientList.innerHTML = clients.map(client => `
+        <div class="flex justify-between items-center p-2 border-b dark:border-gray-700">
+          <span>${client.name}</span>
+          <button onclick="selectClient('${client.name}')" class="gray-button">Select</button>
+        </div>
+      `).join('');
+      document.getElementById('chooseClientModal').classList.remove('hidden');
+    }
+
+    // Select Client
+    function selectClient(clientName) {
+      selectedClient = clients.find(client => client.name === clientName);
+      closeModal('chooseClientModal');
+    }
+
+    // Close Modal
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.add('hidden');
+    }
+
+    // Generate Receipt
+    function generateReceipt() {
+      if (currentSale.length === 0) {
+        alert('No items in the sale!');
+        return;
+      }
+
+      const doc = new jsPDF();
+      doc.text('Receipt', 10, 10);
+      doc.text(`Client: ${selectedClient ? selectedClient.name : 'No Client Selected'}`, 10, 20);
+      doc.text('Items:', 10, 30);
+      currentSale.forEach((item, index) => {
+        doc.text(`${item.itemName} - ${item.quantity} x $${item.unitPrice.toFixed(2)} = $${item.total.toFixed(2)}`, 10, 40 + (index * 10));
+      });
+      doc.text(`Total: $${currentSale.reduce((sum, item) => sum + item.total, 0).toFixed(2)}`, 10, 40 + (currentSale.length * 10));
+      doc.save('receipt.pdf');
     }
 
     // Initialize
