@@ -428,32 +428,64 @@
     }
 
     // Add Client
-    document.getElementById('addClientForm').addEventListener('submit', (e) => {
-      e.preventDefault();
-      const clientName = document.querySelector('#addClientForm input[type="text"]').value;
-      const clientEmail = document.querySelector('#addClientForm input[type="text"]').value;
-      const clientPhone = document.querySelector('#addClientForm input[type="text"]').value;
-      clients.push({ name: clientName, email: clientEmail, phone: clientPhone });
-      closeModal('addClientModal');
-    });
+document.getElementById('addClientForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const clientName = document.querySelector('#addClientForm input[type="text"]').value;
+  const clientEmail = document.querySelector('#addClientForm input[type="text"]').value;
+  const clientPhone = document.querySelector('#addClientForm input[type="text"]').value;
 
-    // Open Choose Client Modal
-    function openChooseClientModal() {
-      const clientList = document.getElementById('clientList');
-      clientList.innerHTML = clients.map(client => `
-        <div class="flex justify-between items-center p-2 border-b dark:border-gray-700">
-          <span>${client.name}</span>
-          <button onclick="selectClient('${client.name}')" class="gray-button">Select</button>
-        </div>
-      `).join('');
-      document.getElementById('chooseClientModal').classList.remove('hidden');
-    }
+  // Send data to the backend
+  const response = await fetch(`${backendUrl}/clients/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      name: clientName,
+      email: clientEmail,
+      phone: clientPhone,
+    }),
+  });
 
-    // Select Client
-    function selectClient(clientName) {
+  if (response.ok) {
+    alert('Client added successfully!');
+    closeModal('addClientModal');
+  } else {
+    alert('Failed to add client.');
+  }
+});
+
+   // Open Choose Client Modal
+async function openChooseClientModal() {
+  // Fetch clients from the backend
+  const response = await fetch(`${backendUrl}/clients/`);
+  const data = await response.json();
+  const clients = data.clients;
+
+  // Populate the client list
+  const clientList = document.getElementById('clientList');
+  clientList.innerHTML = clients.map(client => `
+    <div class="flex justify-between items-center p-2 border-b dark:border-gray-700">
+      <span>${client.name}</span>
+      <button onclick="selectClient('${client.name}')" class="gray-button">Select</button>
+    </div>
+  `).join('');
+
+  // Show the modal
+  document.getElementById('chooseClientModal').classList.remove('hidden');
+}
+
+   // Select Client
+function selectClient(clientName) {
+  // Fetch clients from the backend
+  fetch(`${backendUrl}/clients/`)
+    .then(response => response.json())
+    .then(data => {
+      const clients = data.clients;
       selectedClient = clients.find(client => client.name === clientName);
       closeModal('chooseClientModal');
-    }
+    });
+}
 
     // Close Modal
     function closeModal(modalId) {
@@ -461,22 +493,22 @@
     }
 
     // Generate Receipt
-    function generateReceipt() {
-      if (currentSale.length === 0) {
-        alert('No items in the sale!');
-        return;
-      }
+function generateReceipt() {
+  if (currentSale.length === 0) {
+    alert('No items in the sale!');
+    return;
+  }
 
-      const doc = new jsPDF();
-      doc.text('Receipt', 10, 10);
-      doc.text(`Client: ${selectedClient ? selectedClient.name : 'No Client Selected'}`, 10, 20);
-      doc.text('Items:', 10, 30);
-      currentSale.forEach((item, index) => {
-        doc.text(`${item.itemName} - ${item.quantity} x $${item.unitPrice.toFixed(2)} = $${item.total.toFixed(2)}`, 10, 40 + (index * 10));
-      });
-      doc.text(`Total: $${currentSale.reduce((sum, item) => sum + item.total, 0).toFixed(2)}`, 10, 40 + (currentSale.length * 10));
-      doc.save('receipt.pdf');
-    }
+  const doc = new jsPDF();
+  doc.text('Receipt', 10, 10);
+  doc.text(`Client: ${selectedClient ? selectedClient.name : 'No Client Selected'}`, 10, 20);
+  doc.text('Items:', 10, 30);
+  currentSale.forEach((item, index) => {
+    doc.text(`${item.itemName} - ${item.quantity} x $${item.unitPrice.toFixed(2)} = $${item.total.toFixed(2)}`, 10, 40 + (index * 10));
+  });
+  doc.text(`Total: $${currentSale.reduce((sum, item) => sum + item.total, 0).toFixed(2)}`, 10, 40 + (currentSale.length * 10));
+  doc.save('receipt.pdf');
+}
 
     // Initialize
     fetchProducts();
